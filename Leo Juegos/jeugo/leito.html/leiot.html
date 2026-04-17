@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fortnite Universe – Galería Oficial</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
+        /* =========================================
+           CURSOR PERSONALIZADO
+        ========================================= */
+        * { cursor: none !important; box-sizing: border-box; }
+        .cursor-dot {
+            width: 8px; height: 8px; background: #00f0ff;
+            border-radius: 50%; position: fixed; top: 0; left: 0;
+            pointer-events: none; z-index: 99999;
+            transform: translate(-50%, -50%);
+            transition: transform 0.05s;
+            box-shadow: 0 0 10px #00f0ff, 0 0 20px #00f0ff;
+        }
+        .cursor-ring {
+            width: 32px; height: 32px;
+            border: 1.5px solid rgba(0,240,255,0.5);
+            border-radius: 50%; position: fixed; top: 0; left: 0;
+            pointer-events: none; z-index: 99998;
+            transform: translate(-50%, -50%);
+            transition: transform 0.12s ease, width 0.2s, height 0.2s, border-color 0.2s;
+        }
+        .cursor-ring.hover { width: 48px; height: 48px; border-color: #b400ff; }
+
+        /* =========================================
+           VARIABLES GLOBALES
+        ========================================= */
+        :root {
+            --bg-dark:      #07080f;
+            --bg-card:      #0e1020;
+            --bg-card-hover:#141628;
+            --primary:      #00f0ff;
+            --primary-glow: rgba(0,240,255,0.35);
+            --accent:       #b400ff;
+            --accent-glow:  rgba(180,0,255,0.35);
+            --yellow:       #ffe600;
+            --text-main:    #ffffff;
+            --text-muted:   #7a8aa0;
+            --border:       rgba(0,240,255,0.12);
+            --legendary:    #d4af37;
+            --epic:         #b300ff;
+            --rare:         #00aeff;
+            --uncommon:     #00cc66;
+            --common:       #808080;
+            --font-gamer:   'Orbitron', sans-serif;
+            --font-body:    'Rajdhani', sans-serif;
+        }
+
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            margin: 0; padding: 0;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: ''; position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(0,240,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,240,255,0.03) 1px, transparent 1px);
+            background-size: 60px 60px; pointer-events: none; z-index: 0;
+            animation: grid-drift 20s linear infinite;
+        }
+        @keyframes grid-drift { 0% { background-position: 0 0; } 100% { background-position: 60px 60px; } }
+        body::after {
+            content: ''; position: fixed; inset: 0;
+            background: radial-gradient(ellipse 80% 80% at 50% 50%, transparent 60%, rgba(7,8,15,0.7) 100%);
+            pointer-events: none; z-index: 0;
+        }
+
+        h1, h2, h3 { font-family: var(--font-gamer); text-transform: uppercase; }
+
+        header {
+            background: rgba(7,8,15,0.88); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            padding: 0 2rem; position: sticky; top: 0; z-index: 100;
+            border-bottom: 1px solid var(--border); box-shadow: 0 0 30px rgba(0,240,255,0.06);
+        }
+        .header-content {
+            max-width: 1400px; margin: 0 auto; display: flex; flex-wrap: wrap;
+            justify-content: space-between; align-items: center; gap: 16px; height: 72px;
+        }
+
+        .leo-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; user-select: none; flex-shrink: 0; }
+        .leo-logo__icon { width: 44px; height: 44px; position: relative; }
+        .leo-logo__icon svg { filter: drop-shadow(0 0 6px var(--primary)); animation: icon-pulse 3s ease-in-out infinite; }
+        @keyframes icon-pulse {
+            0%,100% { filter: drop-shadow(0 0 5px var(--primary)) drop-shadow(0 0 12px var(--accent)); }
+            50% { filter: drop-shadow(0 0 12px var(--primary)) drop-shadow(0 0 28px var(--accent)); }
+        }
+        .leo-logo__bar { width: 3px; height: 34px; border-radius: 2px; background: linear-gradient(180deg, var(--primary), var(--accent)); box-shadow: 0 0 10px var(--primary); }
+        .leo-logo__text { display: flex; flex-direction: column; line-height: 1; }
+        .leo-logo__name {
+            font-family: var(--font-gamer); font-weight: 900; font-size: 1.1rem; letter-spacing: 0.06em;
+            background: linear-gradient(90deg, var(--primary) 0%, #fff 45%, var(--accent) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .leo-logo__tag { font-family: var(--font-body); font-size: 0.58rem; font-weight: 700; letter-spacing: 0.25em; color: var(--yellow); margin-top: 3px; }
+
+        nav { display: flex; gap: 4px; flex-wrap: wrap; }
+        nav a {
+            color: var(--text-muted); text-decoration: none; font-family: var(--font-body); font-size: 0.82rem;
+            font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; transition: all 0.25s; cursor: none;
+            padding: 6px 14px; border-radius: 6px; position: relative; overflow: hidden;
+        }
+        nav a::before {
+            content: ''; position: absolute; bottom: 0; left: 50%; width: 0; height: 2px;
+            background: linear-gradient(90deg, var(--primary), var(--accent)); transform: translateX(-50%); transition: width 0.3s;
+        }
+        nav a:hover, nav a.active { color: var(--primary); background: rgba(0,240,255,0.05); }
+        nav a:hover::before, nav a.active::before { width: 70%; }
+
+        .controls { display: flex; gap: 10px; width: 100%; max-width: 380px; }
+        input, select, textarea {
+            padding: 9px 14px; background: rgba(0,240,255,0.04); border: 1px solid var(--border); color: var(--text-main);
+            font-family: var(--font-body); font-size: 0.9rem; border-radius: 8px; outline: none; width: 100%; transition: all 0.3s;
+        }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,240,255,0.1); }
+        option { background-color: var(--bg-card); color: white; }
+
+        main { padding: 40px 20px; max-width: 1400px; margin: 0 auto; min-height: 70vh; position: relative; z-index: 1; }
+        .seccion { display: none; animation: fadeIn 0.4s ease-out forwards; opacity: 0; }
+        .seccion.activa { display: block; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+
+        h2.titulo-seccion { font-size: 1.8rem; margin-bottom: 30px; display: flex; align-items: center; gap: 14px; letter-spacing: 0.08em; }
+        h2.titulo-seccion::before {
+            content: ''; display: inline-block; width: 5px; height: 32px;
+            background: linear-gradient(to bottom, var(--primary), var(--accent));
+            border-radius: 3px; box-shadow: 0 0 12px var(--primary);
+        }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }
+        .card {
+            background: var(--bg-card); border-radius: 14px; overflow: hidden; cursor: none; transition: all 0.3s ease;
+            position: relative; border: 1px solid var(--border); display: flex; flex-direction: column;
+        }
+        .card:hover { transform: translateY(-8px) scale(1.02); background: var(--bg-card-hover); border-color: rgba(0,240,255,0.3); box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 20px rgba(0,240,255,0.1); }
+        .card-img-wrapper { width: 100%; height: 220px; display: flex; align-items: center; justify-content: center; padding: 20px; background: radial-gradient(circle at center, rgba(0,240,255,0.05) 0%, transparent 70%); }
+        .card img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.4)); transition: transform 0.3s; }
+        .card:hover img { transform: scale(1.1); }
+        .card-info { padding: 18px; background: linear-gradient(to bottom, transparent, rgba(7,8,15,0.6)); flex: 1; display: flex; flex-direction: column; justify-content: flex-end; }
+        .badge {
+            padding: 4px 10px; border-radius: 6px; font-size: 0.65rem; font-family: var(--font-gamer); letter-spacing: 0.1em;
+            text-transform: uppercase; font-weight: 700; width: fit-content; margin-bottom: 8px; border: 1px solid transparent;
+        }
+        .badge.legendary { background: rgba(212,175,55,0.1); color: var(--legendary); border-color: rgba(212,175,55,0.3); }
+        .badge.epic { background: rgba(179,0,255,0.1); color: var(--epic); border-color: rgba(179,0,255,0.3); }
+        .badge.rare { background: rgba(0,174,255,0.1); color: var(--rare); border-color: rgba(0,174,255,0.3); }
+
+        .hero { text-align: center; padding: 90px 20px; border-radius: 20px; border: 1px solid var(--border); background: linear-gradient(180deg, rgba(14,16,32,0.9) 0%, rgba(7,8,15,1) 100%); }
+        .hero h2 { font-size: clamp(1rem, 3vw, 1.3rem); color: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+    <div class="cursor-dot"></div>
+    <div class="cursor-ring"></div>
+
+    <header>
+        <div class="header-content">
+            <a href="#" class="leo-logo" onclick="cambiarSeccion('inicio')">
+                <div class="leo-logo__icon">
+                    <svg viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <polygon points="21,2 37,11 37,31 21,40 5,31 5,11" fill="none" stroke="#00f0ff" stroke-width="1.4"/>
+                    </svg>
+                </div>
+                <div class="leo-logo__bar"></div>
+                <div class="leo-logo__text">
+                    <span class="leo-logo__name" data-text="UNIVERSE">UNIVERSE</span>
+                    <span class="leo-logo__tag">Galería Oficial</span>
+                </div>
+            </a>
+
+            <nav id="menu-nav">
+                <a onclick="cambiarSeccion('inicio')" class="active">Inicio</a>
+                <a onclick="cambiarSeccion('skins')">Skins</a>
+                <a onclick="cambiarSeccion('picos')">Picos</a>
+                <a onclick="cambiarSeccion('mochilas')">Mochilas</a>
+                <a onclick="cambiarSeccion('aladeltas')">Aladeltas</a>
+                <a onclick="cambiarSeccion('bailes')">Bailes</a>
+                <a onclick="cambiarSeccion('mapa')">Mapa</a>
+                <a onclick="cambiarSeccion('metodo-pro')" style="color:var(--primary);">Método Pro</a>
+                <a onclick="cambiarSeccion('pavos')" style="color:var(--yellow);">Pavos</a>
+                <a onclick="cambiarSeccion('contacto')">Contacto</a>
+            </nav>
+
+            <div class="controls">
+                <input type="text" id="searchInput" placeholder="Buscar objeto..." oninput="aplicarFiltros()">
+                <select id="rarityFilter" onchange="aplicarFiltros()">
+                    <option value="all">Todas las rarezas</option>
+                    <option value="legendary">Legendario</option>
+                    <option value="epic">Épico</option>
+                    <option value="rare">Raro</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section id="inicio" class="seccion activa">
+            <div class="hero">
+                <h2>BIENVENIDO AL CENTRO DE DATOS</h2>
+                <p style="color:var(--text-muted); margin-bottom:40px;">Explora el catálogo completo y descubre el Método Pro para mejorar.</p>
+            </div>
+        </section>
+
+        <section id="skins" class="seccion"><h2 class="titulo-seccion">Skins</h2><div class="grid" id="skins-grid"></div></section>
+        <section id="picos" class="seccion"><h2 class="titulo-seccion">Picos</h2><div class="grid" id="picos-grid"></div></section>
+        <section id="mochilas" class="seccion"><h2 class="titulo-seccion">Mochilas</h2><div class="grid" id="mochilas-grid"></div></section>
+        <section id="aladeltas" class="seccion"><h2 class="titulo-seccion">Aladeltas</h2><div class="grid" id="aladeltas-grid"></div></section>
+        <section id="bailes" class="seccion"><h2 class="titulo-seccion">Bailes</h2><div class="grid" id="bailes-grid"></div></section>
+        <section id="mapa" class="seccion"><h2 class="titulo-seccion">Mapa</h2><div id="map" style="height:500px; border-radius:14px; border:1px solid var(--primary);"></div></section>
+        <section id="pavos" class="seccion"><h2 class="titulo-seccion" style="color:var(--yellow);">Tienda de Pavos</h2><p>Contenido de Pavos (Sección mantenida)...</p></section>
+        <section id="contacto" class="seccion"><h2 class="titulo-seccion">Contacto</h2><p>Formulario de contacto...</p></section>
+
+        <section id="metodo-pro" class="seccion">
+            <h2 class="titulo-seccion">Método Pro <i class="fas fa-crosshairs" style="color:var(--primary); margin-left: 10px;"></i></h2>
+            
+            <div style="background:var(--bg-card); padding:30px; border-radius:16px; border:1px solid var(--border); margin-bottom: 30px;">
+                <h3 style="color:var(--primary); font-family:var(--font-gamer); margin-top:0; font-size:1.5rem;">Domina la Isla</h3>
+                <p style="color:var(--text-muted); line-height: 1.6; font-size: 1.05rem;">
+                    Conviértete en un jugador competitivo dominando las estrategias clave del juego. 
+                    Aquí tienes los mejores estilos de juego y trucos para asegurar tu Victoria Magistral, ya juegues agresivo, estratégico o centrado en el equipo.
+                </p>
+            </div>
+
+            <div class="grid">
+                <div class="card" style="cursor: default;">
+                    <div class="card-img-wrapper" style="height: 180px;">
+                        <img src="https://fortnite-api.com/images/cosmetics/br/outfit/cid_175_athena_commando_f_luchador/icon.png" loading="lazy" alt="Agresivo">
+                    </div>
+                    <div class="card-info" style="padding: 20px;">
+                        <span class="badge rare" style="background:rgba(0,174,255,0.2);color:var(--rare);">Mecánica PRO</span>
+                        <h3 style="font-family:var(--font-gamer); margin: 10px 0 5px 0;">Piece Control y Box Fights</h3>
+                        <p style="color:var(--text-muted); font-size: 0.9rem; margin: 0; line-height: 1.5;">El estilo más agresivo. Anticipa los movimientos del rival y rodéalo con tus propias construcciones para no dejarle escapatoria. Usa conos y paredes para editar y sorprender a tu oponente.</p>
+                    </div>
+                </div>
+
+                <div class="card" style="cursor: default;">
+                    <div class="card-img-wrapper" style="height: 180px;">
+                        <img src="https://fortnite-api.com/images/cosmetics/br/outfit/cid_313_athena_commando_m_kpopfashion/icon.png" loading="lazy" alt="Rotación">
+                    </div>
+                    <div class="card-info" style="padding: 20px;">
+                        <span class="badge epic" style="background:rgba(179,0,255,0.2);color:var(--epic);">ESTRATEGIA</span>
+                        <h3 style="font-family:var(--font-gamer); margin: 10px 0 5px 0;">Rotación Periférica (Late Game)</h3>
+                        <p style="color:var(--text-muted); font-size: 0.9rem; margin: 0; line-height: 1.5;">Ideal para torneos y asegurar el top. Cae en los bordes, farmea materiales al máximo y muévete siempre pegado a la tormenta ("Dead Side") para evitar ser atacado por la espalda.</p>
+                    </div>
+                </div>
+
+                <div class="card" style="cursor: default;">
+                    <div class="card-img-wrapper" style="height: 180px;">
+                        <img src="https://fortnite-api.com/images/cosmetics/br/outfit/cid_029_athena_commando_f_halloween/icon.png" loading="lazy" alt="Aim">
+                    </div>
+                    <div class="card-info" style="padding: 20px;">
+                        <span class="badge legendary" style="background:rgba(212,175,55,0.2);color:var(--legendary);">COMBATE</span>
+                        <h3 style="font-family:var(--font-gamer); margin: 10px 0 5px 0;">High Ground Retake</h3>
+                        <p style="color:var(--text-muted); font-size: 0.9rem; margin: 0; line-height: 1.5;">Si pierdes la altura, mantén la calma. Usa dobles ediciones y 90s cubiertos (con techos encima) para recuperar la ventaja sin recibir daño. Controlar la altura garantiza ganar el 80% de los 1v1.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        /* ---- CURSOR ANIMADO ---- */
+        const dot = document.querySelector('.cursor-dot');
+        const ring = document.querySelector('.cursor-ring');
+        window.addEventListener('mousemove', (e) => {
+            dot.style.left = e.clientX + 'px'; dot.style.top = e.clientY + 'px';
+            ring.animate({ left: e.clientX + 'px', top: e.clientY + 'px' }, { duration: 300, fill: 'forwards' });
+        });
+
+        /* ---- NAVEGACIÓN Y CARGA BÁSICA ---- */
+        function cambiarSeccion(id) {
+            document.querySelectorAll('.seccion').forEach(s => s.classList.remove('activa'));
+            document.getElementById(id).classList.add('activa');
+            document.querySelectorAll('#menu-nav a').forEach(a => {
+                a.classList.toggle('active', a.getAttribute('onclick').includes(id));
+            });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
